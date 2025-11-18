@@ -2,8 +2,19 @@ import os
 
 # Binance API
 BINANCE_URL = os.getenv("BINANCE_URL", "https://api.binance.com/api/v3/klines")
-KLINES_LIMIT = int(os.getenv("KLINES_LIMIT", "500"))
-REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "10"))
+
+# Helper function to safely get int from env
+def get_int_env(key: str, default: int) -> int:
+    value = os.getenv(key, "")
+    if value == "":
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+KLINES_LIMIT = get_int_env("KLINES_LIMIT", 500)
+REQUEST_TIMEOUT = get_int_env("REQUEST_TIMEOUT", 10)
 
 SYMBOLS = os.getenv(
     "SYMBOLS",
