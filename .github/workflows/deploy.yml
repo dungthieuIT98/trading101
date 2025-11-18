@@ -32,10 +32,10 @@ jobs:
       
       - name: Run trading bot
         env:
-          BINANCE_URL: ${{ secrets.BINANCE_URL }}
-          KLINES_LIMIT: ${{ secrets.KLINES_LIMIT }}
-          REQUEST_TIMEOUT: ${{ secrets.REQUEST_TIMEOUT }}
-          SYMBOLS: ${{ secrets.SYMBOLS }}
+          BINANCE_URL: ${{ secrets.BINANCE_URL || 'https://api.binance.com/api/v3/klines' }}
+          KLINES_LIMIT: ${{ secrets.KLINES_LIMIT || '500' }}
+          REQUEST_TIMEOUT: ${{ secrets.REQUEST_TIMEOUT || '10' }}
+          SYMBOLS: ${{ secrets.SYMBOLS || 'BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT,DOGEUSDT,ADAUSDT,TRXUSDT,AVAXUSDT,DOTUSDT' }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: |
