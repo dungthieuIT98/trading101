@@ -1,0 +1,51 @@
+name: Deploy and Run Trading Bot
+
+on:
+  # Chạy theo lịch cronjob (mỗi 4 giờ)
+  schedule:
+    - cron: '0 */4 * * *'  # Chạy mỗi 4 giờ
+  # Cho phép chạy thủ công
+  workflow_dispatch:
+  # Chạy khi push code lên main branch
+  push:
+    branches:
+      - main
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run trading bot
+        env:
+          BINANCE_URL: ${{ secrets.BINANCE_URL }}
+          KLINES_LIMIT: ${{ secrets.KLINES_LIMIT }}
+          REQUEST_TIMEOUT: ${{ secrets.REQUEST_TIMEOUT }}
+          SYMBOLS: ${{ secrets.SYMBOLS }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: |
+          python main.py
+      
+      - name: Upload data artifacts (optional)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trading-data
+          path: data/
+          retention-days: 7
+
