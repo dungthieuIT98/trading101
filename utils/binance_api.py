@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 from typing import Optional
 import config
+import time
 
 def get_klines(
     symbol: str,
@@ -28,11 +29,42 @@ def get_klines(
     if endTime:
         params["endTime"] = endTime
 
-    try:
-        resp = requests.get(url, params=params, timeout=timeout)
-        resp.raise_for_status()
-    except requests.RequestException as e:
-        raise RuntimeError(f"Error fetching klines: {e}")
+    # Headers để tránh bị chặn (lỗi 451)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "application/json",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Referer": "https://www.binance.com/"
+    }
+
+    # Retry logic với exponential backoff
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            resp = requests.get(url, params=params, timeout=timeout, headers=headers)
+            resp.raise_for_status()
+            break
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 451:
+                if attempt < max_retries - 1:
+                    wait_time = (2 ** attempt) * 2  # 2s, 4s, 8s
+                    print(f"Lỗi 451 từ Binance API, thử lại sau {wait_time} giây... (Lần {attempt + 1}/{max_retries})")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise RuntimeError(f"Error fetching klines: Lỗi 451 - IP có thể bị Binance chặn. Thử lại sau. {e}")
+            else:
+                raise RuntimeError(f"Error fetching klines: {e}")
+        except requests.RequestException as e:
+            if attempt < max_retries - 1:
+                wait_time = (2 ** attempt) * 2
+                print(f"Lỗi kết nối, thử lại sau {wait_time} giây... (Lần {attempt + 1}/{max_retries})")
+                time.sleep(wait_time)
+                continue
+            else:
+                raise RuntimeError(f"Error fetching klines: {e}")
 
     data = resp.json()
 

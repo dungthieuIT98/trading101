@@ -3,6 +3,7 @@ from indicators.indicator import Indicator
 import sys
 import os
 import pandas as pd
+import time
 import config
 sys.path.append('./utils')
 from utils.binance_api import get_klines
@@ -63,6 +64,7 @@ def call_data():
     """Chạy một lần để xử lý tất cả symbols - phù hợp với cronjob"""
     symbols = config.SYMBOLS
     interval = "4h"
+    failed_symbols = []
     
     for symbol in symbols:
         try:
@@ -86,10 +88,18 @@ def call_data():
                 send_alert(latest_record)
             
             print(f"Hoàn thành xử lý {symbol}\n")
+            
+            # Delay giữa các requests để tránh rate limit
+            time.sleep(1)
         except Exception as e:
-            print(f"Lỗi khi xử lý {symbol}: {e}")
+            error_msg = f"Lỗi khi xử lý {symbol}: {e}"
+            print(error_msg)
+            failed_symbols.append(symbol)
+            # Tiếp tục xử lý các symbol khác thay vì dừng lại
     
     print(f"Hoàn thành xử lý tất cả symbols.")
+    if failed_symbols:
+        print(f"Các symbol bị lỗi: {', '.join(failed_symbols)}")
 
 if __name__ == "__main__":
     call_data()
