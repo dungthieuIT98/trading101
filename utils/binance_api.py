@@ -40,28 +40,28 @@ def get_klines(
     }
 
     # Retry logic với exponential backoff
-    max_retries = 3
-    for attempt in range(max_retries):
+    maxRetries = 3
+    for attempt in range(maxRetries):
         try:
             resp = requests.get(url, params=params, timeout=timeout, headers=headers)
             resp.raise_for_status()
             break
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 451:
-                if attempt < max_retries - 1:
-                    wait_time = (2 ** attempt) * 2  # 2s, 4s, 8s
-                    print(f"Lỗi 451 từ Binance API, thử lại sau {wait_time} giây... (Lần {attempt + 1}/{max_retries})")
-                    time.sleep(wait_time)
+                if attempt < maxRetries - 1:
+                    waitTime = (2 ** attempt) * 2  # 2s, 4s, 8s
+                    print(f"Lỗi 451 từ Binance API, thử lại sau {waitTime} giây... (Lần {attempt + 1}/{maxRetries})")
+                    time.sleep(waitTime)
                     continue
                 else:
                     raise RuntimeError(f"Error fetching klines: Lỗi 451 - IP có thể bị Binance chặn. Thử lại sau. {e}")
             else:
                 raise RuntimeError(f"Error fetching klines: {e}")
         except requests.RequestException as e:
-            if attempt < max_retries - 1:
-                wait_time = (2 ** attempt) * 2
-                print(f"Lỗi kết nối, thử lại sau {wait_time} giây... (Lần {attempt + 1}/{max_retries})")
-                time.sleep(wait_time)
+            if attempt < maxRetries - 1:
+                waitTime = (2 ** attempt) * 2  # 2s, 4s, 8s
+                print(f"Lỗi kết nối, thử lại sau {waitTime} giây... (Lần {attempt + 1}/{maxRetries})")
+                time.sleep(waitTime)
                 continue
             else:
                 raise RuntimeError(f"Error fetching klines: {e}")
@@ -78,10 +78,10 @@ def get_klines(
     df["symbol"] = symbol
     df["date"] = pd.to_datetime(df["open_time"], unit="ms")
 
-    numeric_cols = [
+    numericCols = [
         "open_time", "open", "high", "low", "close", "volume",
         "close_time", "quote_asset_volume", "taker_buy_base", "taker_buy_quote"
     ]
-    df[numeric_cols] = df[numeric_cols].astype(float)
+    df[numericCols] = df[numericCols].astype(float)
 
     return df
