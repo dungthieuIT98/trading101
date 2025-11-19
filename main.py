@@ -54,47 +54,56 @@ def send_alert(latestRecord):
     
     message = format_alert_message(latestRecord)
     send_message(message)
+ 
 
-def call_data():
-    """Chạy một lần để xử lý tất cả symbols - phù hợp với cronjob"""
+def run_worker():
+    """Worker chạy liên tục mỗi 4 giờ"""
     symbols = config.SYMBOLS
     interval = "4h"
-    failedSymbols = []
-    
-    for symbol in symbols:
-        try:
-            print(f"Đang xử lý {symbol}...")
-            
-            # Lấy dữ liệu mới nhất
-            dfNew = get_klines(symbol=symbol, interval=interval, limit=1)
-            
-            # Tạo tên file dựa trên symbol và interval
-            fileName = f"{symbol.lower()}{interval}.csv"
-            filePath = os.path.join("data", fileName)
-            
-            # Đảm bảo thư mục data tồn tại
-            os.makedirs("data", exist_ok=True)
-            
-            # Xử lý và lưu dữ liệu
-            latestRecord = process_and_save_data(dfNew, filePath)
-            
-            # Gửi cảnh báo nếu có tín hiệu
-            if latestRecord is not None:
-                send_alert(latestRecord)
-            
-            print(f"Hoàn thành xử lý {symbol}\n")
-            
-            # Delay giữa các requests để tránh rate limit
-            time.sleep(1)
-        except Exception as e:
-            errorMsg = f"Lỗi khi xử lý {symbol}: {e}"
-            print(errorMsg)
-            failedSymbols.append(symbol)
-            # Tiếp tục xử lý các symbol khác thay vì dừng lại
-    
-    print(f"Hoàn thành xử lý tất cả symbols.")
-    if failedSymbols:
-        print(f"Các symbol bị lỗi: {', '.join(failedSymbols)}")
+
+    while True:
+        failedSymbols = []
+
+        print("=== BẮT ĐẦU VÒNG LẶP WORKER ===")
+
+        for symbol in symbols:
+            try:
+                print(f"Đang xử lý {symbol}...")
+
+                # Lấy dữ liệu mới nhất
+                dfNew = get_klines(symbol=symbol, interval=interval, limit=1)
+
+                # Tạo tên file dựa trên symbol và interval
+                fileName = f"{symbol.lower()}{interval}.csv"
+                filePath = os.path.join("data", fileName)
+
+                # Đảm bảo thư mục data tồn tại
+                os.makedirs("data", exist_ok=True)
+
+                # Xử lý và lưu dữ liệu
+                latestRecord = process_and_save_data(dfNew, filePath)
+
+                # Gửi cảnh báo nếu có tín hiệu
+                if latestRecord is not None:
+                    send_alert(latestRecord)
+
+                print(f"Hoàn thành xử lý {symbol}\n")
+
+                # Tránh bị rate limit
+                time.sleep(1)
+
+            except Exception as e:
+                errorMsg = f"Lỗi khi xử lý {symbol}: {e}"
+                print(errorMsg)
+                failedSymbols.append(symbol)
+
+        print("=== HOÀN THÀNH VÒNG LẶP ===")
+        if failedSymbols:
+            print(f"Các symbol bị lỗi: {', '.join(failedSymbols)}")
+
+        print("Chờ 4 giờ trước khi chạy lại...\n")
+        time.sleep(4 * 60 * 60)  # 4 giờ
+
 
 if __name__ == "__main__":
-    call_data()
+    run_worker()
