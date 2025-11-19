@@ -197,7 +197,6 @@ def check_alerts(df: pd.DataFrame) -> pd.DataFrame:
             alert_values[idx] = ' | '.join(alerts)
         else:
             alert_values[idx] = 'None'
-        print(alert_values[idx])
     # Chỉ cập nhật các bản ghi chưa có giá trị
     df.loc[mask, 'alert_signal'] = alert_values
     return df
